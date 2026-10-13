@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mutatis: macro scenarios for valuation</title>
+<meta name="description" content="Mutatis builds consistent macroeconomic scenarios from an ensemble of models and carries them through to company valuations, with uncertainty broken down by source.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;1,400;1,500;1,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3F6F5; --paper-raised: #FFFFFF; --ink: #12201E; --ink-muted: #4F5D5A;
+    --rule: #D3DBD8; --brand: #00675D; --brand-strong: #08433C; --brand-tint: #D3EBE6;
+    --on-brand: #FFFFFF; --chart-1: #008F80; --seq-4: #00766A; --chart-2: #D2462B;
+    --status-critical: #A3271C;
+    --font-serif: "Spectral", Georgia, serif;
+    --font-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121A19; --paper-raised: #1A2422; --ink: #ECE7DC; --ink-muted: #A9B3AF;
+      --rule: #2C3835; --brand: #4FC2B2; --brand-strong: #8FD8CC; --brand-tint: #2A4F49;
+      --on-brand: #121A19; --chart-1: #22A796; --seq-4: #2FAA99; --chart-2: #E85A3B;
+      --status-critical: #F2867A;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-sans); font-size: 17px; line-height: 1.6;
+  }
+  a { color: var(--brand); text-underline-offset: 3px; }
+  a:hover { color: var(--brand-strong); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+  /* Masthead */
+  .masthead { display: flex; align-items: baseline; gap: 14px; padding-top: 28px; }
+  .wordmark { font-family: var(--font-serif); font-weight: 500; font-size: 30px; line-height: 1; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+  .endorse { font-size: 14px; color: var(--ink-muted); }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 64px; align-items: center; padding-top: 72px; padding-bottom: 88px; }
+  h1 {
+    font-family: var(--font-serif); font-weight: 500; font-size: clamp(44px, 6.2vw, 80px);
+    line-height: 0.98; letter-spacing: -0.02em; margin: 0 0 28px; max-width: 9ch;
+  }
+  h1 em { font-style: italic; }
+  h1 strong { font-weight: 700; }
+  .lede { font-size: 19px; line-height: 1.6; margin: 0 0 32px; max-width: 34em; }
+  .lede + .lede { margin-top: -16px; color: var(--ink-muted); font-size: 17px; }
+
+  /* Demo */
+  .demo { margin: 0; }
+  .toggle { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; padding: 3px; background: var(--paper-raised); margin-bottom: 18px; }
+  .toggle button {
+    font: 500 15px/1 var(--font-sans); color: var(--ink-muted); background: transparent;
+    border: 0; border-radius: 2px; padding: 11px 16px; cursor: pointer;
+  }
+  .toggle button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  .chart { display: block; width: 100%; height: auto; }
+  .axis { stroke: var(--rule); stroke-width: 1; }
+  .asof { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 3 4; }
+  .hist { fill: none; stroke: var(--ink); stroke-width: 2; }
+  .lbl { font: 400 13px var(--font-sans); fill: var(--ink-muted); }
+  .lbl-strong { font: 500 13px var(--font-sans); fill: var(--ink); }
+  .band90 { fill: var(--chart-1); opacity: .14; }
+  .band68 { fill: var(--chart-1); opacity: .22; }
+  .band50 { fill: var(--chart-1); opacity: .34; }
+  .median { fill: none; stroke: var(--seq-4); stroke-width: 2.5; }
+  .naive { fill: none; stroke: var(--chart-2); stroke-width: 2.5; }
+  .layer { transition: opacity 360ms ease; }
+  .is-off { opacity: 0; }
+  #fanReveal { transition: none; }
+  .explain { min-height: 5.2em; margin: 14px 0 6px; max-width: 38em; }
+  .note { font-size: 13px; color: var(--ink-muted); margin: 0; }
+
+  /* Sections */
+  section { padding: 64px 0; }
+  section + section { border-top: 1px solid var(--rule); }
+  section:first-of-type { border-top: 1px solid var(--rule); }
+  h2 { font-family: var(--font-serif); font-weight: 500; font-size: 34px; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 36px; max-width: 22ch; }
+  .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; }
+  .principles h3 { font-size: 18px; line-height: 1.35; font-weight: 600; margin: 0 0 10px; }
+  .principles p { margin: 0; color: var(--ink-muted); }
+
+  .roadmap-intro { margin: -20px 0 32px; color: var(--ink-muted); max-width: 40em; }
+  .roadmap { list-style: none; margin: 0; padding: 0; max-width: 760px; }
+  .roadmap li { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--rule); }
+  .roadmap li:first-child { padding-top: 0; }
+  .roadmap .what { font-weight: 600; }
+  .roadmap .what span { display: block; font-weight: 400; font-size: 14px; color: var(--ink-muted); }
+  .roadmap p { margin: 0; }
+
+  /* Sign-up */
+  section.signup { background: var(--brand-tint); border-top: 0; }
+  .signup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: end; }
+  .signup h2 { margin-bottom: 12px; }
+  .signup p { margin: 0; max-width: 34em; }
+  form { display: flex; gap: 10px; flex-wrap: wrap; }
+  label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  input[type="email"] {
+    flex: 1 1 240px; min-width: 0; font: 400 17px var(--font-sans); color: var(--ink);
+    background: var(--paper-raised); border: 1px solid var(--ink-muted); border-radius: 2px; padding: 13px 14px;
+  }
+  input[type="email"]::placeholder { color: var(--ink-muted); }
+  .btn {
+    font: 600 16px/1 var(--font-sans); color: var(--on-brand); background: var(--brand);
+    border: 0; border-radius: 4px; padding: 15px 22px; cursor: pointer;
+  }
+  .btn:hover { background: var(--brand-strong); }
+  .form-msg { flex-basis: 100%; margin: 4px 0 0; font-size: 15px; min-height: 1.6em; }
+  .form-msg.err { color: var(--status-critical); }
+
+  footer { padding: 36px 0 48px; margin-top: 0; font-size: 14px; color: var(--ink-muted); }
+  footer p { margin: 0 0 6px; max-width: 70em; }
+
+  @media (max-width: 880px) {
+    .wrap { padding: 0 16px; }
+    .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; padding-bottom: 64px; }
+    .principles { grid-template-columns: 1fr; gap: 28px; }
+    .roadmap li { grid-template-columns: 1fr; gap: 6px; }
+    .signup-grid { grid-template-columns: 1fr; gap: 24px; }
+    section { padding: 48px 0; }
+    h2 { font-size: 28px; }
+    .lbl, .lbl-strong { font-size: 19px; }
+    .toggle button { padding: 10px 12px; font-size: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .layer { transition: none; }
+  }
+  @media (prefers-color-scheme: dark) {
+    .band90 { opacity: .24; } .band68 { opacity: .34; } .band50 { opacity: .48; }
+  }
+</style>
+</head>
+<body>
+<header class="wrap masthead">
+  <a class="wordmark" href="/">Mutatis</a>
+  <span class="endorse">by VP Macro Analytics</span>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Valuation, <em><strong>mutatis</strong> mutandis</em>.</h1>
+      <p class="lede">Most valuation scenarios change one input and hold everything else still. Mutatis changes them together: interest rates, inflation, growth, credit spreads and cash flows move the way an economy would, drawn from an ensemble of macroeconomic models.</p>
+      <p class="lede">Every valuation comes with its range, and with an account of where that range comes from.</p>
+    </div>
+
+    <figure class="demo" aria-labelledby="demoCaption">
+      <div class="toggle" role="group" aria-label="How the rate shock is valued">
+        <button type="button" id="btnOne" aria-pressed="false">Move one input</button>
+        <button type="button" id="btnAll" aria-pressed="true">Move everything together</button>
+      </div>
+
+      <svg class="chart" viewBox="0 0 560 330" role="img" aria-labelledby="chartTitle chartDesc">
+        <title id="chartTitle">A company's value after a one-point rise in interest rates</title>
+        <desc id="chartDesc">Illustration. History up to today, then two ways of valuing the shock: a single line from changing the discount rate alone, or a fan of outcomes from scenarios where rates, inflation, growth and spreads move together.</desc>
+        <defs>
+          <clipPath id="fanClip"><rect id="fanReveal" x="0" y="0" width="560" height="330"/></clipPath>
+        </defs>
+        <line class="axis" x1="20" y1="290" x2="540" y2="290"/>
+        <line class="asof" x1="220" y1="40" x2="220" y2="290"/>
+        <text class="lbl" x="226" y="54">Today</text>
+        <text class="lbl" x="20" y="312">History</text>
+        <text class="lbl" x="540" y="312" text-anchor="end">Five years out</text>
+        <path class="hist" d="M20 178 C 60 170, 80 190, 110 176 S 160 150, 185 162 S 210 168, 220 160"/>
+
+        <g id="layerAll" class="layer" clip-path="url(#fanClip)">
+          <path class="band90" d="M220 160 C 300 150, 420 110, 540 92 L 540 262 C 420 246, 300 196, 220 160 Z"/>
+          <path class="band68" d="M220 160 C 300 158, 420 132, 540 122 L 540 230 C 420 220, 300 186, 220 160 Z"/>
+          <path class="band50" d="M220 160 C 300 162, 420 146, 540 142 L 540 208 C 420 202, 300 180, 220 160 Z"/>
+          <path class="median" d="M220 160 C 300 170, 420 172, 540 175"/>
+          <text class="lbl-strong" x="536" y="84" text-anchor="end">Range of outcomes</text>
+        </g>
+
+        <g id="layerOne" class="layer is-off">
+          <path class="naive" d="M220 160 C 260 220, 360 236, 540 240"/>
+          <text class="lbl-strong" x="536" y="264" text-anchor="end">One precise answer</text>
+        </g>
+      </svg>
+
+      <p class="explain" id="explain" aria-live="polite"></p>
+      <figcaption class="note" id="demoCaption">Illustration of the method, not a forecast or a recommendation.</figcaption>
+    </figure>
+  </div>
+
+  <section aria-labelledby="howTitle"><div class="wrap">
+    <h2 id="howTitle">What makes a Mutatis scenario different</h2>
+    <div class="principles">
+      <div>
+        <h3>The economy moves as a system</h3>
+        <p>A rate shock carries through to inflation, growth and credit the way structural models say it should, so discount rates and cash flows stay consistent with each other.</p>
+      </div>
+      <div>
+        <h3>Uncertainty, broken down by source</h3>
+        <p>Each valuation range is split into what comes from disagreement between models, from parameters, from the company's sensitivity to the economy, and from the equity risk premium.</p>
+      </div>
+      <div>
+        <h3>Tested without hindsight</h3>
+        <p>Every backtest uses only the data that was published at the time, revisions included. Track records are earned, not fitted.</p>
+      </div>
+    </div>
+  </div></section>
+
+  <section aria-labelledby="comingTitle"><div class="wrap">
+    <h2 id="comingTitle">The Mutatis product line</h2>
+    <p class="roadmap-intro">Released in stages, beginning with a free weekly briefing.</p>
+    <ol class="roadmap">
+      <li><div class="what">Mutatis Nowcast<span>Free weekly briefing</span></div><p>Current estimates of US growth, inflation, employment and interest rates from the full model ensemble, each with its range, updated as new data is published.</p></li>
+      <li><div class="what">Mutatis Scenarios<span>Monthly sector reports</span></div><p>Consistent macro scenarios carried through to sector fundamentals such as net interest income, credit losses, margins and revenues. Launching with banks, followed by homebuilders, REITs and utilities.</p></li>
+      <li><div class="what">Mutatis Valuation<span>Subscription</span></div><p>Valuation ranges for individual companies under each scenario, the scenario implied by today's share price, and how much of each range comes from the macro outlook.</p></li>
+    </ol>
+  </div></section>
+
+  <section class="signup" aria-labelledby="signupTitle">
+    <div class="wrap signup-grid">
+      <div>
+        <h2 id="signupTitle">Read the first nowcast</h2>
+        <p>One email a week when it launches. No other mail, and you can unsubscribe at any time.</p>
+      </div>
+      <form id="signupForm" novalidate>
+        <label class="sr" for="email">Email address</label>
+        <input type="email" id="email" name="email" placeholder="you@firm.com" autocomplete="email" required>
+        <button class="btn" type="submit">Subscribe</button>
+        <p class="form-msg" id="formMsg" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <p>Mutatis is a product of VP Macro Analytics, a VP Economics Group company. © 2026.</p>
+  <p>Research and analytics only. Nothing on this site is investment advice or a recommendation to buy or sell any security.</p>
+</div></footer>
+
+<script>
+  // Newsletter provider: set to your Buttondown username once the account exists.
+  const BUTTONDOWN_USER = "";
+
+  // Demo toggle
+  const btnOne = document.getElementById("btnOne");
+  const btnAll = document.getElementById("btnAll");
+  const layerOne = document.getElementById("layerOne");
+  const layerAll = document.getElementById("layerAll");
+  const explain = document.getElementById("explain");
+  const copy = {
+    one: "Raise the discount rate by one point and hold everything else still. The answer is precise, but no economy works that way: a rate rise arrives with changes in inflation, growth and credit.",
+    all: "Let the models move rates, inflation, growth and spreads together. The central estimate shifts differently, and you see how wide the range is and which assumptions drive it."
+  };
+  function show(mode) {
+    const all = mode === "all";
+    btnAll.setAttribute("aria-pressed", String(all));
+    btnOne.setAttribute("aria-pressed", String(!all));
+    layerAll.classList.toggle("is-off", !all);
+    layerOne.classList.toggle("is-off", all);
+    explain.textContent = copy[mode];
+  }
+  btnOne.addEventListener("click", () => show("one"));
+  btnAll.addEventListener("click", () => show("all"));
+  show("all");
+
+  // One orchestrated moment: the fan draws once from today outward.
+  const reveal = document.getElementById("fanReveal");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) {
+    const start = performance.now(), dur = 1100, x0 = 220, x1 = 560;
+    reveal.setAttribute("width", x0);
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    (function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      reveal.setAttribute("width", x0 + (x1 - x0) * ease(t));
+      if (t < 1) requestAnimationFrame(step);
+    })(start);
+  }
+
+  // Sign-up
+  const form = document.getElementById("signupForm");
+  const msg = document.getElementById("formMsg");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    msg.className = "form-msg";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      msg.textContent = "Enter an email address like name@firm.com.";
+      msg.classList.add("err");
+      form.email.focus();
+      return;
+    }
+    if (!BUTTONDOWN_USER) {
+      msg.textContent = "Sign-ups open shortly. Please check back soon.";
+      return;
+    }
+    try {
+      const body = new FormData();
+      body.append("email", email);
+      await fetch(`https://buttondown.com/api/emails/embed-subscribe/${BUTTONDOWN_USER}`, { method: "POST", body, mode: "no-cors" });
+      msg.textContent = "Subscribed. Check your inbox to confirm.";
+      form.reset();
+    } catch {
+      msg.textContent = "That didn't go through. Check your connection and try again.";
+      msg.classList.add("err");
+    }
+  });
+</script>
+</body>
+</html>
