@@ -42,6 +42,12 @@
   .wordmark { font-family: var(--font-serif); font-weight: 500; font-size: 30px; line-height: 1; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
   .endorse { font-size: 14px; color: var(--ink-muted); }
 
+  .sitenav { margin-left: auto; display: flex; gap: 24px; font-size: 15px; }
+  .sitenav a { color: var(--ink-muted); text-decoration: none; }
+  .sitenav a:hover, .sitenav a[aria-current="page"] { color: var(--ink); }
+  .sitenav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .more { margin: 40px 0 0; }
+
   /* Hero */
   .hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 64px; align-items: center; padding-top: 72px; padding-bottom: 88px; }
   h1 {
@@ -128,6 +134,8 @@
     h2 { font-size: 28px; }
     .lbl, .lbl-strong { font-size: 19px; }
     .toggle button { padding: 10px 12px; font-size: 14px; }
+    .masthead { flex-wrap: wrap; row-gap: 8px; }
+    .sitenav { margin-left: 0; width: 100%; }
   }
   @media (prefers-reduced-motion: reduce) {
     .layer { transition: none; }
@@ -141,6 +149,10 @@
 <header class="wrap masthead">
   <a class="wordmark" href="/">Mutatis</a>
   <span class="endorse">by VP Macro Analytics</span>
+  <nav class="sitenav" aria-label="Site">
+    <a href="/" aria-current="page">Home</a>
+    <a href="/methodology.html">Methodology</a>
+  </nav>
 </header>
 
 <main>
@@ -205,6 +217,7 @@
         <p>Every backtest uses only the data that was published at the time, revisions included. Track records are earned, not fitted.</p>
       </div>
     </div>
+    <p class="more"><a href="/methodology.html">How Mutatis works, in detail</a></p>
   </div></section>
 
   <section aria-labelledby="comingTitle"><div class="wrap">
@@ -240,7 +253,7 @@
 
 <script>
   // Newsletter provider: set to your Buttondown username once the account exists.
-  const BUTTONDOWN_USER = "";
+  const BUTTONDOWN_USER = "mutatis";
 
   // Demo toggle
   const btnOne = document.getElementById("btnOne");
@@ -299,7 +312,7 @@
       const body = new FormData();
       body.append("email", email);
       await fetch(`https://buttondown.com/api/emails/embed-subscribe/${BUTTONDOWN_USER}`, { method: "POST", body, mode: "no-cors" });
-      msg.textContent = "Subscribed. Check your inbox to confirm.";
+      msg.textContent = "Almost done: check your inbox for an email from Mutatis and click the link to confirm.";
       form.reset();
     } catch {
       msg.textContent = "That didn't go through. Check your connection and try again.";

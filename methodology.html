@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Mutatis works: methodology</title>
+<meta name="description" content="How Mutatis builds consistent macroeconomic scenarios from an ensemble of models, carries them through to company valuations, and tests everything without hindsight.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;1,400;1,500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F3F6F5; --paper-raised: #FFFFFF; --ink: #12201E; --ink-muted: #4F5D5A;
+    --rule: #D3DBD8; --brand: #00675D; --brand-strong: #08433C; --brand-tint: #D3EBE6;
+    --on-brand: #FFFFFF;
+    --font-serif: "Spectral", Georgia, serif;
+    --font-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121A19; --paper-raised: #1A2422; --ink: #ECE7DC; --ink-muted: #A9B3AF;
+      --rule: #2C3835; --brand: #4FC2B2; --brand-strong: #8FD8CC; --brand-tint: #2A4F49;
+      --on-brand: #121A19;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: 24px; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: 17px; line-height: 1.65; }
+  a { color: var(--brand); text-underline-offset: 3px; }
+  a:hover { color: var(--brand-strong); }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+  /* Masthead */
+  .masthead { display: flex; align-items: baseline; gap: 14px; padding-top: 28px; }
+  .wordmark { font-family: var(--font-serif); font-weight: 500; font-size: 30px; line-height: 1; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+  .endorse { font-size: 14px; color: var(--ink-muted); }
+  .sitenav { margin-left: auto; display: flex; gap: 24px; font-size: 15px; }
+  .sitenav a { color: var(--ink-muted); text-decoration: none; }
+  .sitenav a:hover, .sitenav a[aria-current="page"] { color: var(--ink); }
+  .sitenav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+
+  /* Page head */
+  .pagehead { padding-top: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+  h1 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(38px, 5vw, 58px); line-height: 1.04; letter-spacing: -0.02em; margin: 0 0 20px; max-width: 16ch; }
+  .lede { font-size: 20px; line-height: 1.6; margin: 0; max-width: 36em; }
+  .updated { font-size: 14px; color: var(--ink-muted); margin: 18px 0 0; }
+
+  /* Pipeline */
+  .pipeline-wrap { padding-top: 48px; padding-bottom: 56px; border-bottom: 1px solid var(--rule); }
+  .pipeline-title { font-family: var(--font-serif); font-weight: 500; font-size: 24px; margin: 0 0 24px; }
+  .pipeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 28px; counter-reset: step; }
+  .pipeline li { position: relative; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 4px; padding: 16px 16px 18px; counter-increment: step; }
+  .pipeline li::before { content: counter(step); display: block; font-size: 13px; font-weight: 600; color: var(--brand); margin-bottom: 6px; }
+  .pipeline li + li::after {
+    content: ""; position: absolute; left: -22px; top: 50%; width: 16px; height: 2px; background: var(--ink-muted);
+  }
+  .pipeline li + li > .arrowhead { position: absolute; left: -10px; top: calc(50% - 4px); width: 0; height: 0; border-left: 7px solid var(--ink-muted); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+  .pipeline strong { display: block; font-size: 16px; line-height: 1.3; margin-bottom: 6px; }
+  .pipeline span.desc { display: block; font-size: 14px; line-height: 1.45; color: var(--ink-muted); }
+  .validation { margin-top: 16px; border: 1px dashed var(--ink-muted); border-radius: 4px; padding: 12px 16px; font-size: 15px; }
+  .validation strong { font-weight: 600; }
+
+  /* Article */
+  .article-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 64px; padding-top: 56px; padding-bottom: 72px; }
+  .toc { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+  .toc p { margin: 0 0 10px; color: var(--ink-muted); }
+  .toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--rule); }
+  .toc li a { display: block; padding: 5px 0 5px 14px; color: var(--ink-muted); text-decoration: none; }
+  .toc li a:hover { color: var(--ink); }
+  article { max-width: 680px; }
+  article section { padding: 0 0 48px; margin: 0 0 48px; border-bottom: 1px solid var(--rule); }
+  article section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+  h2 { font-family: var(--font-serif); font-weight: 500; font-size: 32px; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 18px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 28px 0 8px; }
+  article p { margin: 0 0 16px; }
+  article ul { margin: 0 0 16px; padding-left: 1.2em; }
+  article li { margin-bottom: 8px; }
+  article li::marker { color: var(--ink-muted); }
+  .status { display: inline-block; font-size: 13px; color: var(--ink-muted); border: 1px solid var(--rule); border-radius: 2px; padding: 1px 8px; margin: 0 0 14px; background: var(--paper-raised); }
+  .pull { font-family: var(--font-serif); font-style: italic; font-size: 24px; line-height: 1.4; margin: 28px 0 8px; color: var(--brand-strong); max-width: 26em; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 8px 0 20px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
+  th { font-weight: 600; font-size: 14px; color: var(--ink-muted); }
+  td:first-child { font-weight: 500; white-space: nowrap; padding-right: 20px; }
+
+  footer { border-top: 1px solid var(--rule); padding: 36px 0 48px; font-size: 14px; color: var(--ink-muted); }
+  footer p { margin: 0 0 6px; max-width: 70em; }
+
+  @media (max-width: 980px) {
+    .pipeline { grid-template-columns: 1fr; gap: 22px; }
+    .pipeline li + li::after { left: 28px; top: -18px; width: 2px; height: 14px; }
+    .pipeline li + li > .arrowhead { left: 24px; top: -8px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--ink-muted); border-bottom: 0; }
+    .article-grid { grid-template-columns: 1fr; gap: 32px; }
+    .toc { position: static; }
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 0 16px; }
+    .masthead { flex-wrap: wrap; row-gap: 8px; }
+    .sitenav { margin-left: 0; width: 100%; }
+    .pagehead { padding-top: 40px; padding-bottom: 32px; }
+    .lede { font-size: 18px; }
+    h2 { font-size: 27px; }
+    td:first-child { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<header class="wrap masthead">
+  <a class="wordmark" href="/">Mutatis</a>
+  <span class="endorse">by VP Macro Analytics</span>
+  <nav class="sitenav" aria-label="Site">
+    <a href="/">Home</a>
+    <a href="/methodology.html" aria-current="page">Methodology</a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap pagehead">
+    <h1>How Mutatis works</h1>
+    <p class="lede">Mutatis builds macroeconomic scenarios from an ensemble of models, keeps each scenario internally consistent, carries it through to company cash flows and discount rates, and reports every valuation as a range with an account of where that range comes from. Everything is tested using only the data that existed at the time.</p>
+    <p class="updated">Last updated 15 October 2026. Parts marked "in testing" will be finalised before the first Mutatis Nowcast.</p>
+  </div>
+
+  <div class="wrap pipeline-wrap">
+    <h2 class="pipeline-title" id="pipelineTitle">From data to valuation in five stages</h2>
+    <ol class="pipeline" aria-labelledby="pipelineTitle">
+      <li><strong>Data as it was known</strong><span class="desc">Every figure stored with the date it was published, revisions included.</span></li>
+      <li><span class="arrowhead" aria-hidden="true"></span><strong>Macro ensemble</strong><span class="desc">Structural, statistical and market-based models, weighted by real-time track record.</span></li>
+      <li><span class="arrowhead" aria-hidden="true"></span><strong>Market bridge</strong><span class="desc">Each macro path mapped to a yield curve, credit spreads and an equity risk premium.</span></li>
+      <li><span class="arrowhead" aria-hidden="true"></span><strong>Company transmission</strong><span class="desc">Sector mechanics turn the economy into revenues, margins and credit losses.</span></li>
+      <li><span class="arrowhead" aria-hidden="true"></span><strong>Valuation</strong><span class="desc">A distribution of value per share, split by source of uncertainty.</span></li>
+    </ol>
+    <p class="validation"><strong>Independent validation</strong> runs alongside every stage: it scores the models, sets their weights and audits for hindsight before anything is published.</p>
+  </div>
+
+  <div class="wrap article-grid">
+    <nav class="toc" aria-label="On this page">
+      <p>On this page</p>
+      <ol>
+        <li><a href="#data">Data as it was known</a></li>
+        <li><a href="#ensemble">An ensemble of models</a></li>
+        <li><a href="#scenarios">Scenarios that hold together</a></li>
+        <li><a href="#ranges">Honest ranges</a></li>
+        <li><a href="#companies">From the economy to companies</a></li>
+        <li><a href="#valuation">Where a valuation's range comes from</a></li>
+        <li><a href="#testing">Testing and validation</a></li>
+        <li><a href="#limits">What we don't claim</a></li>
+      </ol>
+    </nav>
+
+    <article>
+      <section id="data" aria-labelledby="h-data">
+        <h2 id="h-data">Data as it was known</h2>
+        <p>Economic statistics are revised, sometimes heavily. A GDP figure first published as weak can be revised to strong a year later. A model tested on today's revised data looks better than it could ever have been in real time.</p>
+        <p>Mutatis stores every observation with the date it was published and the date it was superseded. When a model is fitted or tested "as of" a past date, it sees exactly the data available that day: the early estimate, not the revision.</p>
+        <p>Where a revised series has no published history of its earlier versions, it is marked as such, and it is excluded from real-time tests unless a run explicitly includes it. Data comes from official statistical agencies and the Federal Reserve, and every series carries its licence terms; only data we have the right to publish appears on this site.</p>
+      </section>
+
+      <section id="ensemble" aria-labelledby="h-ensemble">
+        <h2 id="h-ensemble">An ensemble of models</h2>
+        <p>No single macroeconomic model is reliable across every variable and horizon. Mutatis combines several families, each with different strengths:</p>
+        <table>
+          <thead><tr><th scope="col">Family</th><th scope="col">What it contributes</th></tr></thead>
+          <tbody>
+            <tr><td>Structural New Keynesian models</td><td>Economically coherent responses to shocks, and the ability to ask "what if". Based on published models from the central-bank and academic literature, including Smets and Wouters (2007) and Del Negro, Giannoni and Schorfheide (2015).</td></tr>
+            <tr><td>Bayesian vector autoregressions</td><td>Strong statistical forecasts of how many variables move together.</td></tr>
+            <tr><td>Dynamic factor nowcast</td><td>An estimate of the current quarter, updated as each data release arrives.</td></tr>
+            <tr><td>Market-implied paths</td><td>What interest-rate markets are pricing.</td></tr>
+            <tr><td>No-change benchmark</td><td>A deliberately simple baseline every other model has to beat.</td></tr>
+          </tbody>
+        </table>
+        <h3>How models are weighted</h3>
+        <p>Each model's weight comes from its real-time forecasting record: how well its full range of outcomes, not just its central forecast, matched what happened. Weights are pulled toward equal weighting, so a lucky run cannot dominate, and models that make nearly identical errors are grouped and weighted as one, so a family of similar models cannot win weight by numbers alone.</p>
+        <p>Every forecast reports an effective number of models: how many genuinely independent views the ensemble contains. When models agree because they share the same blind spot, that number says so.</p>
+      </section>
+
+      <section id="scenarios" aria-labelledby="h-scenarios">
+        <h2 id="h-scenarios">Scenarios that hold together</h2>
+        <p class="status">In testing</p>
+        <p>A Mutatis scenario is a set of thousands of possible paths for the economy. Each path comes from a single model, so within it interest rates, inflation, growth and credit spreads move the way that model says they should. Paths are never stitched together from different models, which would break those relationships.</p>
+        <p>Every path starts from the same estimate of where the economy is today, taken from the nowcast. Where a model does not forecast a variable, it is filled in by the statistical model conditional on that path, so the whole picture stays consistent.</p>
+        <p>Scenarios can be conditioned on assumptions, for example "oil prices rise 25% next quarter" or "the policy rate stays 50 basis points above market pricing". Each model then shows how the rest of the economy would respond.</p>
+        <p class="pull">When rates move in a Mutatis scenario, everything that should move with them does.</p>
+      </section>
+
+      <section id="ranges" aria-labelledby="h-ranges">
+        <h2 id="h-ranges">Honest ranges</h2>
+        <p class="status">In testing</p>
+        <p>Models tend to be more confident than they should be, especially years ahead, and an ensemble of similar models inherits their shared overconfidence. Mutatis checks each range against its real-time record: if a band labelled 90% has historically contained the outcome much less often, it is widened until it would have been right.</p>
+        <p>The widening is estimated only from past data at each point, is shrunk when the record is short, and never makes a range narrower than the models themselves suggest. It stretches each path around its own centre, so the relationships between variables within a path are unchanged. Calibration factors are published with each release.</p>
+        <!-- TODO: add the table of calibration factors by variable and horizon once ADR-007 tests are final. -->
+      </section>
+
+      <section id="companies" aria-labelledby="h-companies">
+        <h2 id="h-companies">From the economy to companies</h2>
+        <h3>The market bridge</h3>
+        <p>Each macro path is translated into the financial conditions a valuation needs: a full government yield curve consistent with that path's policy rate and inflation, corporate credit spreads, and an equity risk premium. The equity risk premium is the largest single source of uncertainty in most valuations, so it is estimated from several methods and reported as its own component rather than buried in a discount rate.</p>
+        <h3>Company and sector transmission</h3>
+        <p>Where the economics are well understood, Mutatis models them directly. For banks, the first sector covered, net interest income depends on how quickly deposit and loan rates follow the policy rate, and credit losses depend on unemployment and house prices. Where direct mechanics are not available, sensitivities are estimated from company filings, with each company's estimate pulled toward its sector's to avoid reading too much into a short history.</p>
+        <p>These sensitivities are themselves uncertain, and that uncertainty is carried forward rather than replaced by a single best guess.</p>
+      </section>
+
+      <section id="valuation" aria-labelledby="h-valuation">
+        <h2 id="h-valuation">Where a valuation's range comes from</h2>
+        <p>For each path, Mutatis projects the company's cash flows and discount rate and computes a value per share. Banks are valued on returns over tangible book value, the method suited to them, rather than free cash flow. The long-run growth rate in each path's terminal value comes from that path's own long-run nominal growth.</p>
+        <p>Across all paths this gives a distribution of value, which is then split into its sources:</p>
+        <ul>
+          <li><strong>Which model:</strong> disagreement between the macro models.</li>
+          <li><strong>Macro uncertainty within each model:</strong> the range of outcomes a single model considers plausible.</li>
+          <li><strong>Company sensitivity:</strong> uncertainty about how strongly the company responds to the economy.</li>
+          <li><strong>Equity risk premium.</strong></li>
+          <li><strong>Terminal value:</strong> long-run growth and the fade toward it.</li>
+          <li><strong>Calibration:</strong> the extra width added because models have historically been overconfident.</li>
+          <li><strong>Company-specific:</strong> everything not explained by the economy.</li>
+        </ul>
+        <p>Mutatis also works in reverse: given today's share price, it finds the macro scenario the market appears to be pricing, and how likely that scenario is under the ensemble.</p>
+        <p>We label each part of a range by its source. Disagreement between models is not a statistical standard error, and we never present it as one.</p>
+      </section>
+
+      <section id="testing" aria-labelledby="h-testing">
+        <h2 id="h-testing">Testing and validation</h2>
+        <p>Every model, the ensemble and the calibration are tested as if run on each past date, using only data available then, over at least two decades of quarterly forecasts. Forecasts are compared with a no-change benchmark and with professional forecaster surveys, and scored on both accuracy and how well their ranges matched outcomes.</p>
+        <p>Testing is carried out by a validation process kept separate from model building. It sets the ensemble weights, so models cannot grade themselves, and it audits every change for hindsight, for inconsistency between interest rates and inflation within a path, and for data licensing before anything is published.</p>
+        <p>Once the Mutatis Nowcast launches, every published forecast is kept, so the live track record can be checked by anyone.</p>
+      </section>
+
+      <section id="limits" aria-labelledby="h-limits">
+        <h2 id="h-limits">What we don't claim</h2>
+        <ul>
+          <li>Ranges are estimates from models and their track records, not guarantees. Outcomes outside them will happen.</li>
+          <li>Models can share blind spots. The effective number of models and the calibration component are there to show when they do, but no method removes the risk entirely.</li>
+          <li>The economy changes. Relationships estimated from the past can break, as they did in 2020 and 2022.</li>
+          <li>Company sensitivities rest on limited history and are least reliable for companies whose business has changed.</li>
+          <li>Mutatis is research and analytics. Nothing on this site is investment advice or a recommendation to buy or sell any security.</li>
+        </ul>
+      </section>
+    </article>
+  </div>
+</main>
+
+<footer><div class="wrap">
+  <p>Mutatis is a product of VP Macro Analytics, a VP Economics Group company. © 2026.</p>
+  <p>Research and analytics only. Nothing on this site is investment advice or a recommendation to buy or sell any security.</p>
+</div></footer>
+</body>
+</html>
